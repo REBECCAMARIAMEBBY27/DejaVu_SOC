@@ -1,0 +1,11 @@
+{
+  "search_name": "Deja Vu SOC Test Alert",
+  "sid": "test-002",
+  "results": [
+    {
+      "host": "demo-host",
+      "severity": "high",
+      "message": "Multiple failed login attempts"
+    }
+  ]
+}

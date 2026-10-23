@@ -1,0 +1,34 @@
+{
+  "alert_id": "92429e21-0ddc-48b1-80bd-acc5337f6691",
+  "source": "splunk",
+  "alert_name": "WL014 VPC RDP Allowed Connections",
+  "timestamp": null,
+  "severity": "high",
+  "category": "network_security",
+  "description": null,
+  "source_ip": "192.0.2.10",
+  "destination_ip": "192.0.2.20",
+  "source_port": 50123,
+  "destination_port": 3389,
+  "protocol": "6",
+  "action": "ACCEPT",
+  "host": "demo-host",
+  "raw_metadata": {
+    "splunk_alert_metadata": {
+      "search_name": "WL014 VPC RDP Allowed Connections",
+      "sid": "normalization-test-001"
+    },
+    "splunk_sid": "normalization-test-001",
+    "splunk_search_name": "WL014 VPC RDP Allowed Connections",
+    "splunk_event": {
+      "srcaddr": "192.0.2.10",
+      "dstaddr": "192.0.2.20",
+      "srcport": "50123",
+      "dstport": "3389",
+      "protocol": "6",
+      "action": "ACCEPT",
+      "host": "demo-host",
+      "severity": "high"
+    }
+  }
+}

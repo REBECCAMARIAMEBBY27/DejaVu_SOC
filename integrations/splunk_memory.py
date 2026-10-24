@@ -23,9 +23,35 @@ def normalized_alert_to_incident(
 ) -> dict[str, Any]:
     """Convert a normalized Splunk alert into a one-event query."""
 
+    if not isinstance(alert, dict):
+        raise ValueError("Normalized alert must be a JSON object")
+
     alert_id = alert.get("alert_id")
-    if not alert_id:
+    if not isinstance(alert_id, str) or not alert_id.strip():
         raise ValueError("Normalized alert is missing alert_id")
+
+    searchable_fields = (
+        "alert_name",
+        "category",
+        "description",
+        "severity",
+        "source_ip",
+        "destination_ip",
+        "protocol",
+        "action",
+        "host",
+    )
+    has_searchable_text = any(
+        isinstance(alert.get(field), str) and alert[field].strip()
+        for field in searchable_fields
+    )
+    has_searchable_port = any(
+        isinstance(alert.get(field), int)
+        and not isinstance(alert[field], bool)
+        for field in ("source_port", "destination_port")
+    )
+    if not has_searchable_text and not has_searchable_port:
+        raise ValueError("Normalized alert has no searchable fields")
 
     event_type = (
         alert.get("alert_name")
@@ -94,7 +120,11 @@ def retrieve_for_saved_alert(
 ) -> dict[str, Any]:
     """Retrieve historical candidates for a saved normalized alert."""
 
-    if Path(filename).name != filename or not filename.endswith(".json"):
+    if (
+        not isinstance(filename, str)
+        or Path(filename).name != filename
+        or not filename.endswith(".json")
+    ):
         raise ValueError(
             "Provide a JSON filename from normalized_alerts"
         )

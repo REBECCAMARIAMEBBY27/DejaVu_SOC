@@ -126,9 +126,28 @@ A successful request returns, for example:
   "filenames": [
     "normalized_alert_<unique-id>.json",
     "normalized_alert_<unique-id>.json"
+  ],
+  "retrieval": [
+    {
+      "filename": "normalized_alert_<unique-id>.json",
+      "status": "completed",
+      "alert_id": "<alert-id>",
+      "fingerprint": {},
+      "candidates": [
+        {
+          "incident_id": "INC-001",
+          "vector_score": 0.82
+        }
+      ]
+    }
   ]
 }
 ```
+
+Historical retrieval runs after alerts are saved. If retrieval is unavailable,
+the webhook still reports the alert as received and returns a `retrieval`
+entry with `status: "failed"`; inspect the backend log for the failure. Scores
+rank candidate incidents and are not proof that an alert is malicious.
 
 ## Run tests
 
@@ -163,3 +182,42 @@ Get-Content .\data\normalized_alerts\<filename>.json
 Local tests or a manually constructed HTTP request only verify the receiver;
 they do not prove a real Splunk alert was delivered. Real Splunk delivery must
 be verified independently.
+
+## Frontend dashboard
+
+The React + Vite + TypeScript + Tailwind dashboard is in `frontend/`.
+Only the existing `GET /health` route is called by the browser. Alert rows,
+dashboard metrics, incident details, and comparison scores are explicitly
+labelled demo data because this backend does not expose read APIs for saved
+alerts or historical incidents, or an analyst-facing retrieval endpoint. The
+authenticated Splunk webhook is not called from the browser, so its bearer
+secret is never included in frontend code.
+
+Install Node.js 20 or later, then start the backend in one PowerShell terminal:
+
+```powershell
+cd C:\Users\ebbyt\soc\DejaVu_SOC
+$env:SPLUNK_WEBHOOK_SECRET = "your-local-development-token"
+python -m uvicorn backend.main:app --host 127.0.0.1 --port 8001
+```
+
+In another terminal, install frontend dependencies and start Vite:
+
+```powershell
+cd C:\Users\ebbyt\soc\DejaVu_SOC\frontend
+npm install
+Copy-Item .env.example .env
+npm run dev
+```
+
+Open the local URL printed by Vite. The development server proxies `/api`
+requests to `http://127.0.0.1:8001` by default. To use a different local
+backend, set `VITE_PROXY_TARGET` in `frontend/.env`. `VITE_API_BASE_URL`
+defaults to `/api`; direct cross-origin production access will also require
+the backend or a deployment proxy to permit the frontend origin.
+
+Build the frontend with:
+
+```powershell
+npm run build
+```

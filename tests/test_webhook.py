@@ -4,6 +4,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from backend import config
+from backend import webhook_receiver
 from backend.main import app
 
 client = TestClient(app)
@@ -13,6 +14,15 @@ client = TestClient(app)
 def setup_webhook(monkeypatch, tmp_path):
     monkeypatch.delenv("SPLUNK_WEBHOOK_SECRET", raising=False)
     monkeypatch.setenv("SPLUNK_WEBHOOK_SECRET", "test-secret")
+    monkeypatch.setattr(
+        webhook_receiver,
+        "_retrieve_saved_alert",
+        lambda filename: {
+            "alert_id": "SYNTH-ALERT",
+            "fingerprint": {},
+            "candidates": [],
+        },
+    )
     normalized_directory = tmp_path / "normalized_alerts"
     monkeypatch.setattr(
         app.state,
@@ -75,6 +85,67 @@ def test_webhook_saves_only_normalized_alerts(tmp_path):
     assert "password" not in json.dumps(saved).casefold()
     assert "session_key" not in json.dumps(saved).casefold()
     assert not legacy_raw_directory.exists()
+
+
+def test_webhook_retrieves_candidates_for_saved_alert(monkeypatch, tmp_path):
+    normalized_directory = tmp_path / "normalized_alerts"
+    retrieval_calls = []
+
+    def retrieve(filename):
+        retrieval_calls.append(filename)
+        saved = json.loads(
+            (normalized_directory / filename).read_text(encoding="utf-8")
+        )
+        return {
+            "alert_id": saved["alert_id"],
+            "fingerprint": {"events": [{"event_type": "synthetic"}]},
+            "candidates": [
+                {"incident_id": "INC-SYNTHETIC", "vector_score": 0.9}
+            ],
+        }
+
+    monkeypatch.setattr(webhook_receiver, "_retrieve_saved_alert", retrieve)
+
+    response = post_alert({"search_name": "Synthetic alert"})
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["status"] == "received"
+    assert len(retrieval_calls) == 1
+    assert body["retrieval"] == [
+        {
+            "filename": retrieval_calls[0],
+            "status": "completed",
+            "alert_id": json.loads(
+                (normalized_directory / retrieval_calls[0]).read_text(
+                    encoding="utf-8"
+                )
+            )["alert_id"],
+            "fingerprint": {"events": [{"event_type": "synthetic"}]},
+            "candidates": [
+                {"incident_id": "INC-SYNTHETIC", "vector_score": 0.9}
+            ],
+        }
+    ]
+
+
+def test_retrieval_failure_does_not_hide_persisted_alert(monkeypatch, tmp_path):
+    normalized_directory = tmp_path / "normalized_alerts"
+
+    def fail_retrieval(filename):
+        raise RuntimeError("synthetic index unavailable")
+
+    monkeypatch.setattr(webhook_receiver, "_retrieve_saved_alert", fail_retrieval)
+
+    response = post_alert({"search_name": "Synthetic alert"})
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["status"] == "received"
+    assert body["stored_count"] == 1
+    assert len(list(normalized_directory.glob("*.json"))) == 1
+    assert body["retrieval"][0]["status"] == "failed"
+    assert body["retrieval"][0]["error"] == "Historical retrieval unavailable"
 
 
 def test_multiple_result_events_create_distinct_normalized_files(tmp_path):

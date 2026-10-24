@@ -18,6 +18,12 @@ class AlertStorageError(Exception):
     pass
 
 
+def _retrieve_saved_alert(filename: str) -> dict[str, object]:
+    from integrations.splunk_memory import retrieve_for_saved_alert
+
+    return retrieve_for_saved_alert(filename)
+
+
 def _reject_nonstandard_json_constant(value: str) -> None:
     raise ValueError(f"Non-standard JSON constant: {value}")
 
@@ -129,9 +135,31 @@ async def receive_splunk_webhook(request: Request) -> dict[str, object]:
         raise HTTPException(status_code=500, detail="Alert could not be stored") from None
 
     logger.info("Stored %d normalized Splunk alert(s)", len(filenames))
+    retrieval_results = []
+    for filename in filenames:
+        try:
+            result = _retrieve_saved_alert(filename)
+        except (ImportError, KeyError, OSError, RuntimeError, TypeError, ValueError):
+            logger.exception(
+                "Historical retrieval failed for saved alert %s",
+                filename,
+            )
+            retrieval_results.append({
+                "filename": filename,
+                "status": "failed",
+                "error": "Historical retrieval unavailable",
+            })
+        else:
+            retrieval_results.append({
+                "filename": filename,
+                "status": "completed",
+                **result,
+            })
+
     return {
         "status": "received",
         "normalized": True,
         "stored_count": len(filenames),
         "filenames": filenames,
+        "retrieval": retrieval_results,
     }

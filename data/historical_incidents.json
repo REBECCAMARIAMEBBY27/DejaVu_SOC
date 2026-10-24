@@ -1,0 +1,104 @@
+[
+  {
+    "incident_id": "INC-001",
+    "severity": "high",
+    "events": [
+      {
+        "seq": 1,
+        "timestamp": "2026-10-20T10:00:00Z",
+        "event_type": "phishing_email_click",
+        "technique": "T1566",
+        "host": "WS-014",
+        "user": "user_a",
+        "evidence": "Simulated email security event"
+      },
+      {
+        "seq": 2,
+        "timestamp": "2026-10-20T10:05:00Z",
+        "event_type": "powershell_encoded_command",
+        "technique": "T1059.001",
+        "host": "WS-014",
+        "user": "user_a",
+        "evidence": "Simulated PowerShell event"
+      },
+      {
+        "seq": 3,
+        "timestamp": "2026-10-20T10:10:00Z",
+        "event_type": "credential_dumping",
+        "technique": "T1003",
+        "host": "WS-014",
+        "user": "user_a",
+        "evidence": "Simulated credential access event"
+      }
+    ],
+    "response_actions": [
+      {
+        "action": "Isolate affected host",
+        "outcome_effective": true
+      }
+    ],
+    "outcome": "Contained in the simulation"
+  },
+  {
+    "incident_id": "INC-002",
+    "severity": "high",
+    "events": [
+      {
+        "seq": 1,
+        "timestamp": "2026-10-18T12:00:00Z",
+        "event_type": "phishing_email_click",
+        "technique": "T1566",
+        "host": "WS-022",
+        "user": "user_b",
+        "evidence": "Simulated email security event"
+      },
+      {
+        "seq": 2,
+        "timestamp": "2026-10-18T12:03:00Z",
+        "event_type": "powershell_encoded_command",
+        "technique": "T1059.001",
+        "host": "WS-022",
+        "user": "user_b",
+        "evidence": "Simulated PowerShell event"
+      }
+    ],
+    "response_actions": [
+      {
+        "action": "Investigate affected host",
+        "outcome_effective": true
+      }
+    ],
+    "outcome": "Investigation completed in the simulation"
+  },
+  {
+    "incident_id": "INC-003",
+    "severity": "medium",
+    "events": [
+      {
+        "seq": 1,
+        "timestamp": "2026-10-21T09:00:00Z",
+        "event_type": "malware_detected",
+        "technique": "T1204.002",
+        "host": "WS-031",
+        "user": "user_c",
+        "evidence": "Simulated malware alert"
+      },
+      {
+        "seq": 2,
+        "timestamp": "2026-10-21T09:02:00Z",
+        "event_type": "file_encryption",
+        "technique": "T1486",
+        "host": "WS-031",
+        "user": "user_c",
+        "evidence": "Simulated file encryption alert"
+      }
+    ],
+    "response_actions": [
+      {
+        "action": "Investigate malware activity",
+        "outcome_effective": true
+      }
+    ],
+    "outcome": "Malware investigation completed in the simulation"
+  }
+]
